@@ -12,6 +12,7 @@ import type { CdpActionTimeouts } from "./cdp.js";
 import { getChromeMcpModule } from "./chrome-mcp.runtime.js";
 import type { ResolvedBrowserProfile } from "./config.js";
 import { BrowserTabNotFoundError, BrowserTargetAmbiguousError } from "./errors.js";
+import { resolveRelayAuthTokenForPort } from "./extension-relay-auth.js";
 import {
   assertBrowserNavigationAllowed,
   assertBrowserNavigationResultAllowed,
@@ -217,6 +218,16 @@ export function createProfileTabOps({
       }
     }
 
+    let fetchInit: RequestInit | undefined;
+    if (capabilities.requiresRelay) {
+      try {
+        const port = Number(new URL(profile.cdpUrl).port);
+        const relayAuthToken = await resolveRelayAuthTokenForPort(port);
+        fetchInit = { headers: { "x-openclaw-relay-token": relayAuthToken } };
+      } catch {
+        // fall through without auth — will fail with 401 if relay requires it
+      }
+    }
     const raw = await fetchJson<
       Array<{
         id?: string;
@@ -225,7 +236,7 @@ export function createProfileTabOps({
         webSocketDebuggerUrl?: string;
         type?: string;
       }>
-    >(appendCdpPath(cdpHttpBase, "/json/list"), undefined, undefined, getCdpControlPolicy());
+    >(appendCdpPath(cdpHttpBase, "/json/list"), undefined, fetchInit, getCdpControlPolicy());
     return raw
       .map((t) => ({
         targetId: t.id ?? "",

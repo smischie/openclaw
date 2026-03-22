@@ -10,7 +10,7 @@ export type BrowserProfileConfig = {
   /** Extra Chrome MCP arguments for existing-session profiles. */
   mcpArgs?: string[];
   /** Profile driver (default: openclaw). */
-  driver?: "openclaw" | "clawd" | "existing-session";
+  driver?: "openclaw" | "clawd" | "existing-session" | "extension";
   /** If true, launch this profile in headless mode. Falls back to browser.headless. */
   headless?: boolean;
   /** Browser executable path for this profile. Falls back to browser.executablePath. */
@@ -86,6 +86,8 @@ export type BrowserConfig = {
   tabCleanup?: BrowserTabCleanupConfig;
   /** SSRF policy for browser navigation/open-tab operations. */
   ssrfPolicy?: BrowserSsrFPolicyConfig;
+  /** Bind address for the Chrome extension relay listener. Default: loopback. Set "0.0.0.0" for LAN/WSL2. */
+  relayBindHost?: string;
   /**
    * Additional Chrome launch arguments.
    * Useful for stealth flags, window size overrides, or custom user-agent strings.

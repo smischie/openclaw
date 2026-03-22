@@ -81,6 +81,7 @@ export type ResolvedBrowserConfig = {
   profiles: Record<string, BrowserProfileConfig>;
   tabCleanup: ResolvedBrowserTabCleanupConfig;
   ssrfPolicy?: SsrFPolicy;
+  relayBindHost?: string;
   extraArgs: string[];
 };
 
@@ -101,7 +102,7 @@ export type ResolvedBrowserProfile = {
   mcpCommand?: string;
   mcpArgs?: string[];
   color: string;
-  driver: "openclaw" | "existing-session";
+  driver: "openclaw" | "existing-session" | "extension";
   executablePath?: string;
   headless: boolean;
   headlessSource?: "profile" | "config" | "default";
@@ -422,6 +423,7 @@ export function resolveBrowserConfig(
       )
     : [];
 
+  const relayBindHost = cfg?.relayBindHost?.trim() || undefined;
   return {
     enabled,
     evaluateEnabled,
@@ -446,6 +448,7 @@ export function resolveBrowserConfig(
     profiles,
     tabCleanup: resolveBrowserTabCleanupConfig(cfg),
     ssrfPolicy: resolveBrowserSsrFPolicy(cfg),
+    relayBindHost,
     extraArgs,
   };
 }
@@ -463,7 +466,12 @@ export function resolveProfile(
   let cdpHost = resolved.cdpHost;
   let cdpPort = profile.cdpPort ?? 0;
   let cdpUrl = "";
-  const driver = profile.driver === "existing-session" ? "existing-session" : "openclaw";
+  const driver =
+    profile.driver === "existing-session"
+      ? "existing-session"
+      : profile.driver === "extension"
+        ? "extension"
+        : "openclaw";
   const headless = profile.headless ?? resolved.headless;
   const headlessSource =
     typeof profile.headless === "boolean" ? "profile" : resolved.headlessSource;

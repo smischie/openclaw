@@ -18,7 +18,15 @@ import {
   stopOpenClawChrome,
 } from "./chrome.js";
 import type { ResolvedBrowserProfile } from "./config.js";
-import { BrowserProfileUnavailableError } from "./errors.js";
+import { BrowserValidationError, BrowserProfileUnavailableError } from "./errors.js";
+import {
+  probeAuthenticatedOpenClawRelay,
+  resolveRelayAuthTokenForPort,
+} from "./extension-relay-auth.js";
+import {
+  ensureChromeExtensionRelayServer,
+  stopChromeExtensionRelayServer,
+} from "./extension-relay.js";
 import { getBrowserProfileCapabilities } from "./profile-capabilities.js";
 import {
   CDP_READY_AFTER_LAUNCH_MAX_TIMEOUT_MS,
@@ -157,6 +165,20 @@ export function createProfileAvailability({
       await listChromeMcpTabs(profile.name, profile);
       return true;
     }
+    if (capabilities.requiresRelay) {
+      try {
+        const port = Number(new URL(profile.cdpUrl).port);
+        const relayAuthToken = await resolveRelayAuthTokenForPort(port);
+        return await probeAuthenticatedOpenClawRelay({
+          baseUrl: profile.cdpUrl,
+          relayAuthHeader: "x-openclaw-relay-token",
+          relayAuthToken,
+          timeoutMs: Math.max(timeoutMs ?? 2000, 2000),
+        });
+      } catch {
+        return false;
+      }
+    }
     const { httpTimeoutMs, wsTimeoutMs } = resolveTimeouts(timeoutMs);
     return await isChromeCdpReady(
       profile.cdpUrl,
@@ -247,6 +269,9 @@ export function createProfileAvailability({
       const { closeChromeMcpSession } = await getChromeMcpModule();
       await closeChromeMcpSession(previousProfile.name).catch(() => false);
     }
+    if (previousProfile.driver === "extension") {
+      await stopChromeExtensionRelayServer({ cdpUrl: previousProfile.cdpUrl }).catch(() => false);
+    }
     await closePlaywrightBrowserConnectionForProfile(previousProfile.cdpUrl);
     if (previousProfile.cdpUrl !== profile.cdpUrl) {
       await closePlaywrightBrowserConnectionForProfile(profile.cdpUrl);
@@ -321,11 +346,49 @@ export function createProfileAvailability({
       return;
     }
     const current = state();
+    const isExtension = capabilities.requiresRelay;
     const remoteCdp = capabilities.isRemote;
     const attachOnly = profile.attachOnly;
     const profileState = getProfileState();
     const httpReachable = await isHttpReachable();
     const launchOptions = launchOptionsForEnsure(options);
+
+    if (isExtension && remoteCdp) {
+      throw new BrowserValidationError(
+        `Profile "${profile.name}" uses driver=extension but cdpUrl is not loopback (${profile.cdpUrl}).`,
+      );
+    }
+
+    if (isExtension) {
+      const isRelayReachable = async (timeoutMs?: number): Promise<boolean> => {
+        try {
+          const port = new URL(profile.cdpUrl).port;
+          const relayAuthToken = await resolveRelayAuthTokenForPort(Number(port));
+          return await probeAuthenticatedOpenClawRelay({
+            baseUrl: profile.cdpUrl,
+            relayAuthHeader: "x-openclaw-relay-token",
+            relayAuthToken,
+            timeoutMs,
+          });
+        } catch {
+          return false;
+        }
+      };
+      if (!(await isRelayReachable())) {
+        await ensureChromeExtensionRelayServer({
+          cdpUrl: profile.cdpUrl,
+          bindHost: current.resolved.relayBindHost,
+        });
+        if (!(await isRelayReachable(PROFILE_ATTACH_RETRY_TIMEOUT_MS))) {
+          throw new BrowserProfileUnavailableError(
+            `Chrome extension relay for profile "${profile.name}" is not reachable at ${profile.cdpUrl}.`,
+          );
+        }
+      }
+      // Browser startup should only ensure relay availability.
+      // Tab attachment is checked when a tab is actually required.
+      return;
+    }
 
     if (!httpReachable) {
       if ((attachOnly || remoteCdp) && opts.onEnsureAttachTarget) {
@@ -447,6 +510,12 @@ export function createProfileAvailability({
     if (capabilities.usesChromeMcp) {
       const { closeChromeMcpSession } = await getChromeMcpModule();
       const stopped = await closeChromeMcpSession(profile.name);
+      return { stopped };
+    }
+    if (capabilities.requiresRelay) {
+      const stopped = await stopChromeExtensionRelayServer({
+        cdpUrl: profile.cdpUrl,
+      });
       return { stopped };
     }
     const profileState = getProfileState();

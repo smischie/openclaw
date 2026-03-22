@@ -81,40 +81,8 @@ export function normalizeLegacyBrowserConfig(
   const browser = structuredClone(rawBrowser);
   let browserChanged = false;
 
-  if ("relayBindHost" in browser) {
-    delete browser.relayBindHost;
-    browserChanged = true;
-    changes.push(
-      "Removed browser.relayBindHost (legacy Chrome extension relay setting; host-local Chrome now uses Chrome MCP existing-session attach).",
-    );
-  }
-
-  const rawProfiles = browser.profiles;
-  if (isRecord(rawProfiles)) {
-    const profiles = { ...rawProfiles };
-    let profilesChanged = false;
-    for (const [profileName, rawProfile] of Object.entries(rawProfiles)) {
-      if (!isRecord(rawProfile)) {
-        continue;
-      }
-      const rawDriver = normalizeOptionalString(rawProfile.driver) ?? "";
-      if (rawDriver !== "extension") {
-        continue;
-      }
-      profiles[profileName] = {
-        ...rawProfile,
-        driver: "existing-session",
-      };
-      profilesChanged = true;
-      changes.push(
-        `Moved browser.profiles.${profileName}.driver "extension" → "existing-session" (Chrome MCP attach).`,
-      );
-    }
-    if (profilesChanged) {
-      browser.profiles = profiles;
-      browserChanged = true;
-    }
-  }
+  // NOTE: relayBindHost and driver="extension" migration removed — we use the
+  // extension relay on this private branch (sorin/browser-relay).
 
   const rawSsrFPolicy = browser.ssrfPolicy;
   if (isRecord(rawSsrFPolicy) && "allowPrivateNetwork" in rawSsrFPolicy) {

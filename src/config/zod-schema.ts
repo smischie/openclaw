@@ -471,7 +471,12 @@ export const OpenClawSchema = z
                 mcpCommand: z.string().optional(),
                 mcpArgs: z.array(z.string()).optional(),
                 driver: z
-                  .union([z.literal("openclaw"), z.literal("clawd"), z.literal("existing-session")])
+                  .union([
+                    z.literal("openclaw"),
+                    z.literal("clawd"),
+                    z.literal("existing-session"),
+                    z.literal("extension"),
+                  ])
                   .optional(),
                 headless: z.boolean().optional(),
                 executablePath: z.string().optional(),
@@ -480,7 +485,11 @@ export const OpenClawSchema = z
               })
               .strict()
               .refine(
-                (value) => value.driver === "existing-session" || value.cdpPort || value.cdpUrl,
+                (value) =>
+                  value.driver === "existing-session" ||
+                  value.driver === "extension" ||
+                  value.cdpPort ||
+                  value.cdpUrl,
                 {
                   message: "Profile must set cdpPort or cdpUrl",
                 },
@@ -500,6 +509,7 @@ export const OpenClawSchema = z
           })
           .strict()
           .optional(),
+        relayBindHost: z.string().optional(),
       })
       .strict()
       .optional(),
