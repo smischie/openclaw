@@ -119,6 +119,7 @@ export async function loadBackground({
   const clearAlarm = vi.fn(async () => true);
   const setBadgeText = vi.fn(async () => undefined);
   const setBadgeBackgroundColor = vi.fn(async () => undefined);
+  const sidePanelSetOptions = vi.fn(async () => undefined);
   const storageGet = vi.fn(async (requestedKeys: string[] | string) => {
     const keys = Array.isArray(requestedKeys) ? requestedKeys : [requestedKeys];
     if (keys.includes("copilotSessionRegistryV1")) {
@@ -193,6 +194,7 @@ export async function loadBackground({
   const chromeMock = {
     extension: { isAllowedFileSchemeAccess: vi.fn(async () => fileAccessAllowed) },
     action: { setBadgeText, setBadgeBackgroundColor },
+    sidePanel: { setOptions: sidePanelSetOptions },
     alarms: {
       create: createAlarm,
       clear: clearAlarm,
@@ -591,6 +593,7 @@ export async function loadBackground({
     startupListener,
     sessionStorageValues,
     sessionStorageSet,
+    sidePanelSetOptions,
     shareTab: (tabId: number) => sharedTabIds.add(tabId),
     unshareTab: (tabId: number) => sharedTabIds.delete(tabId),
     tabGroupsQuery: chromeMock.tabGroups.query,

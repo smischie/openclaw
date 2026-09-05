@@ -28,6 +28,21 @@ describe("native extension bootstrap", () => {
     vi.unstubAllGlobals();
   });
 
+  it("keeps the Side Panel disabled by default and persists an explicit opt-in", async () => {
+    const harness = await loadBackground();
+
+    await expect(sendRuntimeMessage(harness, { type: "getStatus" })).resolves.toMatchObject({
+      sidePanelEnabled: false,
+    });
+    expect(harness.sidePanelSetOptions).toHaveBeenCalledWith({ enabled: false });
+
+    await expect(
+      sendRuntimeMessage(harness, { type: "setSidePanelEnabled", enabled: true }),
+    ).resolves.toEqual({ ok: true, enabled: true });
+    expect(harness.storageValues.sidePanelEnabled).toBe(true);
+    expect(harness.sidePanelSetOptions).toHaveBeenLastCalledWith({ enabled: true });
+  });
+
   it("keeps an existing manual pairing without contacting the native host", async () => {
     const harness = await loadBackground();
 

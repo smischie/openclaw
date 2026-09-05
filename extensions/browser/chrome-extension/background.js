@@ -23,6 +23,7 @@ import {
 } from "./modules/relay-core.js";
 import { createRelayDebugger } from "./modules/relay-debugger.js";
 import { isTabSelected } from "./modules/relay-tab-groups.js";
+import { createSidePanelController } from "./modules/side-panel.js";
 import { registerTabAccessEvents } from "./modules/tab-access-events.js";
 import { createTabAccessPolicy } from "./modules/tab-access.js";
 
@@ -58,6 +59,7 @@ let retiredCopilotCustodyBlocked = true;
 let tabsSyncTimer = null;
 let accessMutationChain = Promise.resolve();
 const pairingConfigStore = createPairingConfigStore(chrome.storage.local);
+const sidePanel = createSidePanelController({ chromeApi: chrome, storage: chrome.storage.local });
 const tabAccessPolicy = createTabAccessPolicy({
   isSelectedTab: isTabSelected,
   getGroupColor: async () => (await getConfig()).groupColor,
@@ -575,6 +577,8 @@ const handlePopupMessage = createPopupMessageHandler({
     }
     return await nativeBootstrap.status();
   },
+  getSidePanelEnabled: () => sidePanel.isEnabled(),
+  setSidePanelEnabled: (enabled) => sidePanel.setEnabled(enabled),
   enableNativeBootstrap: async (enabled) => {
     await requireAutomationAllowed();
     return enabled ? await nativeBootstrap.enable() : await nativeBootstrap.disableSynchronously();
@@ -644,4 +648,5 @@ chrome.runtime.onStartup.addListener(() => {
 chrome.runtime.onInstalled.addListener(() => {
   void startAutomation();
 });
+void sidePanel.initialize();
 void startAutomation();

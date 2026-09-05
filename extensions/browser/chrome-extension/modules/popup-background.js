@@ -21,6 +21,8 @@ export function createPopupMessageHandler({
   getRelayState,
   getRelayStatusHint,
   getNativeBootstrapStatus,
+  getSidePanelEnabled,
+  setSidePanelEnabled,
   enableNativeBootstrap,
   onManualPairing,
   onUnpairStart,
@@ -153,6 +155,7 @@ export function createPopupMessageHandler({
             await accessReady;
             const retiredCopilotCustodyBlocked = isRetiredCopilotCustodyBlocked();
             const nativeBootstrap = await getNativeBootstrapStatus();
+            const sidePanelEnabled = await getSidePanelEnabled();
             const { relayUrl, accessMode } = await getConfig();
             await reconcilePairingInvalidation();
             const accessible = await policy.listAccessibleTabs();
@@ -164,6 +167,7 @@ export function createPopupMessageHandler({
               accessibleTabCount: accessible.length,
               relayUrl: relayUrl ?? "",
               nativeBootstrap,
+              sidePanelEnabled,
               retiredCopilotCustodyBlocked,
               ...(hint ? { hint } : {}),
             });
@@ -187,6 +191,13 @@ export function createPopupMessageHandler({
               return;
             }
             sendResponse({ ok: true, result: await enableNativeBootstrap(msg.enabled) });
+            return;
+          case "setSidePanelEnabled":
+            if (typeof msg.enabled !== "boolean") {
+              sendResponse({ ok: false, error: "Invalid Side Panel setting." });
+              return;
+            }
+            sendResponse({ ok: true, enabled: await setSidePanelEnabled(msg.enabled) });
             return;
           case "setAccessMode": {
             if (msg.accessMode !== ACCESS_MODE_ALL && msg.accessMode !== ACCESS_MODE_SELECTED) {

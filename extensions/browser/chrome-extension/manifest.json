@@ -15,7 +15,8 @@
     "tabGroups",
     "storage",
     "alarms",
-    "nativeMessaging"
+    "nativeMessaging",
+    "sidePanel"
   ],
   "background": { "service_worker": "background.js", "type": "module" },
   "action": {
@@ -31,6 +32,9 @@
   "options_ui": {
     "page": "options.html",
     "open_in_tab": true
+  },
+  "side_panel": {
+    "default_path": "side-panel.html"
   },
   "minimum_chrome_version": "125"
 }

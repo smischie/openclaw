@@ -2,6 +2,7 @@ const statusLine = document.getElementById("status");
 const pairedDetails = document.getElementById("pairedDetails");
 const accessMode = document.getElementById("accessMode");
 const tabAction = document.getElementById("tabAction");
+const openSidePanel = document.getElementById("openSidePanel");
 const settings = document.getElementById("settings");
 const errorLine = document.getElementById("error");
 
@@ -27,6 +28,7 @@ async function refresh() {
     return;
   }
   pairedDetails.classList.toggle("hidden", !status.paired);
+  openSidePanel.classList.toggle("hidden", status.sidePanelEnabled !== true);
   if (status.retiredCopilotCustodyBlocked === true) {
     statusLine.textContent = "Automation paused; open Settings";
     tabAction.classList.add("hidden");
@@ -74,6 +76,10 @@ async function toggleActiveTabAccess() {
 
 tabAction.addEventListener("click", () => {
   void toggleActiveTabAccess();
+});
+
+openSidePanel.addEventListener("click", () => {
+  void chrome.windows.getCurrent().then((window) => chrome.sidePanel.open({ windowId: window.id }));
 });
 
 settings.addEventListener("click", () => chrome.runtime.openOptionsPage());

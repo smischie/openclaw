@@ -2,6 +2,7 @@ const connectionStatus = document.getElementById("connectionStatus");
 const bootstrapStatus = document.getElementById("bootstrapStatus");
 const automaticSetup = document.getElementById("automaticSetup");
 const accessMode = document.getElementById("accessMode");
+const sidePanelEnabled = document.getElementById("sidePanelEnabled");
 const pairingString = document.getElementById("pairingString");
 const pair = document.getElementById("pair");
 const useLocal = document.getElementById("useLocal");
@@ -31,6 +32,7 @@ async function refresh() {
           ? "Waiting for the local native host"
           : "Automatic bootstrap ready";
   accessMode.value = status.accessMode === "selected" ? "selected" : "all";
+  sidePanelEnabled.checked = status.sidePanelEnabled === true;
   automaticSetup.disabled = custodyBlocked;
   useLocal.disabled = custodyBlocked;
   accessMode.disabled = !status.paired || custodyBlocked;
@@ -72,6 +74,16 @@ accessMode.addEventListener("change", () => {
   void showResult(
     () => chrome.runtime.sendMessage({ type: "setAccessMode", accessMode: accessMode.value }),
     "Access mode updated.",
+  );
+});
+sidePanelEnabled.addEventListener("change", () => {
+  void showResult(
+    () =>
+      chrome.runtime.sendMessage({
+        type: "setSidePanelEnabled",
+        enabled: sidePanelEnabled.checked,
+      }),
+    sidePanelEnabled.checked ? "Side Panel enabled." : "Side Panel disabled.",
   );
 });
 pair.addEventListener("click", () => {
