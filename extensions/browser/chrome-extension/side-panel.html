@@ -7,28 +7,420 @@
     <style>
       :root {
         color-scheme: light dark;
-        font:
-          14px/1.45 system-ui,
+        font-family:
+          Inter,
+          ui-sans-serif,
+          system-ui,
+          -apple-system,
+          BlinkMacSystemFont,
+          "Segoe UI",
           sans-serif;
+        background: #101216;
+        color: #edf0f4;
+      }
+      * {
+        box-sizing: border-box;
       }
       body {
+        min-width: 280px;
+        height: 100vh;
         margin: 0;
-        padding: 20px;
-        color: #f3f5f7;
-        background: #17191d;
+        overflow: hidden;
+        background: #101216;
       }
-      h1 {
-        margin: 0 0 8px;
-        font-size: 18px;
+      button,
+      textarea {
+        font: inherit;
       }
-      p {
+      .panel {
+        display: grid;
+        grid-template-rows: auto auto minmax(0, 1fr) auto;
+        height: 100%;
+      }
+      .topbar {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 12px;
+        padding: 14px 16px 12px;
+        border-bottom: 1px solid #2a2e36;
+        background: #15181e;
+      }
+      .identity {
+        display: flex;
+        min-width: 0;
+        align-items: center;
+        gap: 9px;
+      }
+      .mark {
+        display: grid;
+        width: 26px;
+        height: 26px;
+        flex: 0 0 auto;
+        place-items: center;
+        border-radius: 8px;
+        background: linear-gradient(135deg, #ff7654, #e8472c);
+        color: white;
+        font-weight: 800;
+      }
+      .title {
+        min-width: 0;
+        font-size: 14px;
+        font-weight: 700;
+        letter-spacing: 0.01em;
+      }
+      .subtitle {
+        overflow: hidden;
+        color: #9ba5b4;
+        font-size: 11px;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+      }
+      .connection {
+        display: inline-flex;
+        flex: 0 0 auto;
+        align-items: center;
+        gap: 6px;
+        padding: 5px 8px;
+        border: 1px solid #344151;
+        border-radius: 999px;
+        color: #b8c8dd;
+        background: #18212c;
+        font-size: 11px;
+        font-weight: 650;
+      }
+      .connection-dot {
+        width: 6px;
+        height: 6px;
+        border-radius: 50%;
+        background: #75c99a;
+        box-shadow: 0 0 0 3px rgb(117 201 154 / 12%);
+      }
+      .session {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 10px;
+        padding: 10px 16px;
+        border-bottom: 1px solid #292d34;
+        background: #12151a;
+      }
+      .session-copy {
+        min-width: 0;
+      }
+      .session-label {
+        color: #8f99a8;
+        font-size: 10px;
+        font-weight: 750;
+        letter-spacing: 0.07em;
+        text-transform: uppercase;
+      }
+      .session-name {
+        overflow: hidden;
+        margin-top: 2px;
+        color: #dce2ea;
+        font-size: 12px;
+        font-weight: 600;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+      }
+      .context-chip {
+        display: inline-flex;
+        flex: 0 0 auto;
+        align-items: center;
+        gap: 5px;
+        padding: 5px 7px;
+        border: 1px solid #3b424d;
+        border-radius: 7px;
+        color: #aab3bf;
+        background: #1b1f26;
+        font-size: 10px;
+      }
+      .context-chip::before {
+        content: "";
+        width: 6px;
+        height: 6px;
+        flex: 0 0 auto;
+        border: 1px solid #768294;
+        border-radius: 2px;
+      }
+      .context-label {
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+      }
+      .timeline {
+        display: flex;
+        min-height: 0;
+        flex-direction: column;
+        gap: 14px;
+        overflow-y: auto;
+        padding: 18px 16px 24px;
+      }
+      .message {
+        display: flex;
+        max-width: 92%;
+        flex-direction: column;
+        gap: 5px;
+      }
+      .message.user {
+        align-self: flex-end;
+        align-items: flex-end;
+      }
+      .message.assistant {
+        align-self: flex-start;
+        align-items: flex-start;
+      }
+      .sender {
+        color: #929dac;
+        font-size: 10px;
+        font-weight: 750;
+        letter-spacing: 0.06em;
+        text-transform: uppercase;
+      }
+      .bubble {
+        overflow-wrap: anywhere;
+        padding: 10px 12px;
+        border: 1px solid #303640;
+        border-radius: 12px 12px 12px 4px;
+        background: #1b1f26;
+        color: #e8edf4;
+        font-size: 13px;
+        line-height: 1.46;
+      }
+      .user .bubble {
+        border-color: #de573b;
+        border-radius: 12px 12px 4px 12px;
+        background: #e95739;
+        color: #fff;
+      }
+      .bubble p {
         margin: 0;
-        color: #aeb5c0;
+      }
+      .bubble p + p {
+        margin-top: 8px;
+      }
+      .bubble code {
+        padding: 1px 4px;
+        border-radius: 4px;
+        background: rgb(0 0 0 / 23%);
+        color: #ffe2da;
+        font:
+          11px/1.5 ui-monospace,
+          SFMono-Regular,
+          Menlo,
+          Consolas,
+          monospace;
+      }
+      .assistant .bubble code {
+        color: #d6e8ff;
+        background: #11151b;
+      }
+      .empty,
+      .state {
+        display: grid;
+        min-height: 100%;
+        place-content: center;
+        padding: 24px;
+        color: #99a4b3;
+        text-align: center;
+      }
+      .empty strong,
+      .state strong {
+        display: block;
+        margin-bottom: 6px;
+        color: #e8edf4;
+        font-size: 14px;
+      }
+      .state.error {
+        color: #f6ae9d;
+      }
+      .hidden {
+        display: none;
+      }
+      .composer-wrap {
+        padding: 10px 12px 14px;
+        border-top: 1px solid #292d34;
+        background: #15181e;
+      }
+      .composer {
+        display: flex;
+        align-items: flex-end;
+        gap: 8px;
+        padding: 7px;
+        border: 1px solid #3a404a;
+        border-radius: 12px;
+        background: #1d2128;
+        box-shadow: 0 4px 20px rgb(0 0 0 / 16%);
+      }
+      textarea {
+        width: 100%;
+        min-height: 34px;
+        max-height: 110px;
+        resize: none;
+        border: 0;
+        outline: 0;
+        padding: 7px 4px;
+        color: inherit;
+        background: transparent;
+        line-height: 1.35;
+      }
+      textarea::placeholder {
+        color: #8993a1;
+      }
+      .send {
+        display: grid;
+        width: 34px;
+        height: 34px;
+        flex: 0 0 auto;
+        place-items: center;
+        border: 0;
+        border-radius: 8px;
+        cursor: pointer;
+        background: #f26042;
+        color: white;
+        font-weight: 800;
+        transition:
+          background 0.15s ease,
+          transform 0.15s ease;
+      }
+      .send:hover:not(:disabled) {
+        background: #ff7655;
+        transform: translateY(-1px);
+      }
+      .send:focus-visible,
+      textarea:focus-visible {
+        outline: 2px solid #8db8ff;
+        outline-offset: 2px;
+      }
+      .send:disabled {
+        cursor: not-allowed;
+        opacity: 0.45;
+      }
+      .composer-hint {
+        display: flex;
+        justify-content: space-between;
+        gap: 8px;
+        margin: 7px 3px 0;
+        color: #7f8997;
+        font-size: 10px;
+      }
+      @media (max-width: 340px) {
+        .topbar,
+        .session {
+          padding-left: 12px;
+          padding-right: 12px;
+        }
+        .timeline {
+          padding-left: 12px;
+          padding-right: 12px;
+        }
+        .connection-label {
+          display: none;
+        }
+        .context-chip {
+          max-width: 104px;
+        }
+      }
+      @media (prefers-color-scheme: light) {
+        :root,
+        body {
+          background: #f7f8fa;
+          color: #17202b;
+        }
+        .topbar,
+        .composer-wrap {
+          background: #fff;
+          border-color: #dce1e8;
+        }
+        .session {
+          background: #f7f8fa;
+          border-color: #e0e4e9;
+        }
+        .title,
+        .session-name,
+        .bubble,
+        .empty strong,
+        .state strong {
+          color: #17202b;
+        }
+        .subtitle,
+        .session-label,
+        .sender,
+        .empty,
+        .state,
+        .composer-hint {
+          color: #657083;
+        }
+        .connection {
+          border-color: #c9d9eb;
+          background: #f0f7ff;
+          color: #41617f;
+        }
+        .context-chip {
+          border-color: #d7dce3;
+          background: #fff;
+          color: #5d6878;
+        }
+        .timeline {
+          background: #f7f8fa;
+        }
+        .bubble {
+          border-color: #dbe0e7;
+          background: #fff;
+        }
+        .assistant .bubble code {
+          background: #edf1f5;
+          color: #234b74;
+        }
+        .composer {
+          border-color: #cdd4de;
+          background: #fff;
+          box-shadow: 0 4px 20px rgb(33 48 65 / 8%);
+        }
       }
     </style>
   </head>
   <body>
-    <h1>OpenClaw</h1>
-    <p>Side Panel is ready. Chat will be available in a future update.</p>
+    <main class="panel" aria-label="OpenClaw Side Panel">
+      <header class="topbar">
+        <div class="identity">
+          <span class="mark" aria-hidden="true">O</span>
+          <div>
+            <div class="title">OpenClaw</div>
+            <div class="subtitle">Side Panel preview</div>
+          </div>
+        </div>
+        <span class="connection" aria-label="Local preview status"
+          ><span class="connection-dot"></span><span class="connection-label">Preview</span></span
+        >
+      </header>
+      <section class="session" aria-label="Conversation details">
+        <div class="session-copy">
+          <div class="session-label">Agent · Session</div>
+          <div class="session-name">Default agent · Current session</div>
+        </div>
+        <span class="context-chip" title="This preview never reads or sends tab data"
+          ><span class="context-label">Tab context unavailable</span></span
+        >
+      </section>
+      <section id="timeline" class="timeline" aria-live="polite" aria-label="Messages"></section>
+      <form id="composerForm" class="composer-wrap">
+        <div class="composer">
+          <textarea
+            id="composer"
+            rows="1"
+            aria-label="Message"
+            placeholder="Message OpenClaw"
+            enterkeyhint="send"
+          ></textarea
+          ><button id="send" class="send" type="submit" aria-label="Send message">↑</button>
+        </div>
+        <div class="composer-hint">
+          <span>Local preview only — nothing is sent.</span><span>Enter to send</span>
+        </div>
+      </form>
+    </main>
+    <script type="module" src="modules/side-panel-ui.js"></script>
   </body>
 </html>
